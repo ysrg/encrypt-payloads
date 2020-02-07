@@ -1,0 +1,16 @@
+{
+  "name": "create-payloads",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "archiver": "^3.1.1",
+    "folder-hash": "^3.3.0"
+  }
+}
