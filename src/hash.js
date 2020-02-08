@@ -8,9 +8,9 @@ const hashingOptions = {
 
 function hash(src) {
     return hashElement(src, opts = hashingOptions)
-    .then(hash => {
-        return hash
-    })
+      .then(hash => {
+          return hash
+      })
 }
 
 
