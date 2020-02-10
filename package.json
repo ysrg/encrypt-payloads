@@ -1,16 +1,26 @@
 {
-  "name": "create-payloads",
-  "version": "1.0.0",
+  "name": "encrypt-payloads",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
+  "files": ["/lib/"],
   "scripts": {
-    
+    "compile": "babel --plugins @babel/plugin-proposal-async-generator-functions src/index.js  --out-file script-compiled.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "ysrg",
   "license": "MIT",
   "dependencies": {
     "archiver": "^3.1.1",
-    "folder-hash": "^3.3.0"
+    "folder-hash": "^3.3.0",
+    "unzipper": "^0.10.8"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.4",
+    "@babel/plugin-proposal-async-generator-functions": "^7.8.3",
+    "child-process-promise": "^2.2.1",
+    "colors": "^1.4.0",
+    "rimraf-promise": "^2.0.0"
   }
 }

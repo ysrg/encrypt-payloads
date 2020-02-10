@@ -3,3 +3,6 @@ node_modules
 signature.md
 publicKey.pem
 yarn.lock
+vault.dat
+lib
+util
