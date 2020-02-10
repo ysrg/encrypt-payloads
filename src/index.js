@@ -18,16 +18,13 @@ class Vault {
       algo: 'sha256',
       encoding: 'hex'
     };
-    return hashEl(
-      path.resolve(src),
-      (this.hashingOptions = defaultOptions)
-    );
+    return hashEl(path.resolve(src), (this.hashingOptions = defaultOptions));
   }
 
   hashZip(src, opts) {
     return new Promise((resolve, reject) => {
       const hash = crypto.createHash('sha256');
-      const input = fs.createReadStream(src);
+      const input = fs.createReadStream(path.resolve(src));
       input.on('readable', () => {
         const data = input.read();
         if (data) hash.update(data);
@@ -41,9 +38,11 @@ class Vault {
     });
   }
 
-  zip(src) {
+  zip(src, zipName) {
     return new Promise((resolve, reject) => {
-      const output = fs.createWriteStream(path.join(src, `${src}.zip`));
+      const output = fs.createWriteStream(
+        path.join(path.resolve(src), `${zipName}.zip`)
+      );
       const archive = archiver('zip', { zlib: { level: 9 } });
 
       archive.pipe(output);
@@ -97,8 +96,8 @@ class Vault {
     }
   }
 
-  encryptAsync() {
-    const data = this.hash;
+  encryptAsync(hash) {
+    const data = this.hash || hash;
     return new Promise((resolve, reject) => {
       try {
         const cipher = crypto.createCipher('aes-256-cbc', this.password);
@@ -106,15 +105,16 @@ class Vault {
           cipher.update(Buffer.from(JSON.stringify(data), 'utf8')),
           cipher.final()
         ]);
+
+        fs.writeFile(this.filePath, encrypted, error => {
+          if (error) {
+            reject(error);
+          }
+          resolve({ message: 'Encrypted!' });
+        });
       } catch (err) {
         reject({ message: err.message });
       }
-      fs.writeFile(this.filePath, encrypted, error => {
-        if (error) {
-          reject(error);
-        }
-        resolve({ message: 'Encrypted!' });
-      });
     });
   }
 
