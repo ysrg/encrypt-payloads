@@ -6,7 +6,7 @@
     "url": "https://github.com/ysrg/encrypt-payloads.git"
   },
   "description": "Generate and encrypt custom payloads",
-  "main": "index.js",
+  "main": "lib/index.js",
   "files": ["/lib/"],
   "scripts": {
     "compile": "babel --plugins @babel/plugin-proposal-async-generator-functions src/index.js  --out-file script-compiled.js"
