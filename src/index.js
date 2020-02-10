@@ -19,7 +19,7 @@ class Vault {
       encoding: 'hex'
     };
     return hashEl(
-      path.resolve(__dirname, src),
+      path.resolve(src),
       (this.hashingOptions = defaultOptions)
     );
   }
@@ -27,7 +27,7 @@ class Vault {
   hashZip(src, opts) {
     return new Promise((resolve, reject) => {
       const hash = crypto.createHash('sha256');
-      const input = fs.createReadStream(path.resolve(__dirname, src));
+      const input = fs.createReadStream(src);
       input.on('readable', () => {
         const data = input.read();
         if (data) hash.update(data);
@@ -43,11 +43,11 @@ class Vault {
 
   zip(src) {
     return new Promise((resolve, reject) => {
-      const output = fs.createWriteStream(path.join(__dirname, `${src}.zip`));
+      const output = fs.createWriteStream(path.join(src, `${src}.zip`));
       const archive = archiver('zip', { zlib: { level: 9 } });
 
       archive.pipe(output);
-      archive.directory(path.resolve(__dirname, src), false);
+      archive.directory(path.resolve(src), false);
       archive.finalize();
 
       output.on('finish', () => resolve('zip file successfully created'));
@@ -56,7 +56,7 @@ class Vault {
   }
 
   encryptStream(url) {
-    const file = fs.createReadStream(path.resolve(__dirname, url));
+    const file = fs.createReadStream(url);
     // const chunks = []
     // for await (let chunk of x) {
     //   chunks.push(chunk)
