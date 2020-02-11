@@ -12,13 +12,20 @@ class Vault {
     this.hash = '';
   }
 
-  hashElement(src, opts) {
-    const defaultOptions = {
+  async hashElement(src, opts) {
+    const defaultOptions = opts || {
       folders: { exclude: ['node_modules'] },
       algo: 'sha256',
       encoding: 'hex'
     };
-    return hashEl(path.resolve(src), (this.hashingOptions = defaultOptions));
+    const result = await hashEl(path.resolve(src), (this.hashingOptions = defaultOptions))
+    fs.writeFileSync('hash.dat', result.hash)
+    return new Promise((resolve, reject) => {
+      if (!result) {
+        reject('Hashing failed')
+      }
+      resolve(result)
+    });
   }
 
   hashZip(src, opts) {
@@ -137,6 +144,49 @@ class Vault {
         }
       });
     });
+  }
+
+  generateKeysAndSign(str, filename, opts) {
+    const signOptions = opts || {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem'
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem'
+      }
+    };
+    const { publicKey, privateKey } = generateKeyPairSync('rsa', signOptions);
+
+    const verifier = createVerify('sha256');
+    const signer = createSign('sha256');
+    const pubKey = fs.createWriteStream(`${filename}_pk.pem`);
+    const sign = fs.createWriteStream(`${filename}_sign.dat`);
+
+    signer.update(str);
+    const signature = signer.sign(privateKey, 'base64');
+    verifier.update(str);
+
+    this.verifier = verifier;
+    this.publicKey = publicKey;
+    this.signature = signature;
+
+    pubKey.once('open', () => {
+      pubKey.write(publicKey);
+    });
+    sign.once('open', () => {
+      sign.write(signature);
+    });
+
+    return { publicKey, signature };
+  }
+
+  verifySignature(pubKey, sign, str) {
+    const verifier = createVerify('sha256');
+    verifier.update(str);
+    return verifier.verify(pubKey, sign, 'base64');
   }
 }
 
