@@ -1,6 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const {
+  createHash,
+  createCipher,
+  createDecipher,
+  createVerify,
+  createSign,
+  generateKeyPairSync
+} = require('crypto');
 const archiver = require('archiver');
 const { hashElement: hashEl } = require('folder-hash');
 
@@ -23,7 +30,7 @@ class Vault {
 
   hashZip(src, opts) {
     return new Promise((resolve, reject) => {
-      const hash = crypto.createHash('sha256');
+      const hash = createHash('sha256');
       const input = fs.createReadStream(path.resolve(src));
       input.on('readable', () => {
         const data = input.read();
@@ -70,7 +77,7 @@ class Vault {
       actualContents = Buffer.concat(buffers);
     });
     try {
-      const cipher = crypto.createCipher('aes-256-cbc', this.password);
+      const cipher = createCipher('aes-256-cbc', this.password);
       const encrypted = Buffer.concat([
         cipher.update(Buffer.concat(buffers)),
         cipher.final()
@@ -85,7 +92,7 @@ class Vault {
   decrypt() {
     try {
       const data = fs.readFileSync(this.filePath);
-      const decipher = crypto.createDecipher('aes-256-cbc', this.password);
+      const decipher = createDecipher('aes-256-cbc', this.password);
       const decrypted = Buffer.concat([
         decipher.update(data),
         decipher.final()
@@ -100,7 +107,7 @@ class Vault {
     const data = this.hash || hash;
     return new Promise((resolve, reject) => {
       try {
-        const cipher = crypto.createCipher('aes-256-cbc', this.password);
+        const cipher = createCipher('aes-256-cbc', this.password);
         const encrypted = Buffer.concat([
           cipher.update(Buffer.from(JSON.stringify(data), 'utf8')),
           cipher.final()
@@ -125,7 +132,7 @@ class Vault {
           reject(error);
         }
         try {
-          const decipher = crypto.createDecipher('aes-256-cbc', this.password);
+          const decipher = createDecipher('aes-256-cbc', this.password);
           const decrypted = Buffer.concat([
             decipher.update(data),
             decipher.final()
@@ -137,6 +144,47 @@ class Vault {
         }
       });
     });
+  }
+
+  generateKeysAndSign(str, filename, opts) {
+    const signOptions = opts || {
+      modulusLength: 4096,
+      publicKeyEncoding: {
+        type: 'spki',
+        format: 'pem'
+      },
+      privateKeyEncoding: {
+        type: 'pkcs8',
+        format: 'pem'
+      }
+    };
+    const { publicKey, privateKey } = generateKeyPairSync('rsa', signOptions);
+
+    const verifier = createVerify('sha256');
+    const signer = createSign('sha256');
+    const pubKey = fs.createWriteStream(`${filename}_pk.pem`);
+    const sign = fs.createWriteStream(`${filename}_sign.dat`);
+
+    signer.update(str);
+    const signature = signer.sign(privateKey, 'base64');
+    verifier.update(str);
+
+    this.verifier = verifier;
+    this.publicKey = publicKey;
+    this.signature = signature;
+
+    pubKey.once('open', () => {
+      pubKey.write(publicKey);
+    });
+    sign.once('open', () => {
+      sign.write(signature);
+    });
+
+    return { publicKey, signature };
+  }
+
+  verifySignature(pubKey, sign) {
+    return this.verifier.verify(this.publicKey, this.signature, 'base64');
   }
 }
 
